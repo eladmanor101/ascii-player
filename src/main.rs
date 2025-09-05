@@ -1,3 +1,29 @@
+pub mod cli;
+pub mod pipeline;
+pub mod util;
+pub mod constants;
+
+use std::io;
+
+use clap::Parser;
+
+use crate::{cli::Args, pipeline::run_pipeline};
+
+/*
+TODO:
+- Sanitize name argument
+*/
+
+fn main() -> io::Result<()> {
+    let args = Args::parse();
+
+    run_pipeline(args)?;
+
+    Ok(())
+}
+
+
+/*
 use std::{env, fs::{self, File}, io::{self, Stdout, Write}, thread, time::{Duration, Instant}};
 
 use crossterm::{
@@ -69,3 +95,4 @@ fn display_frame(height: usize, width: usize, stdout: &mut Stdout, frame: Dynami
 
     Ok(())
 }
+*/

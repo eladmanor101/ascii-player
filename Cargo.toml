@@ -1,9 +1,12 @@
 [package]
-name = "bad-apple-ascii"
+name = "ascii-player"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+clap = { version = "4.5.47", features = ["derive"] }
 crossterm = "0.29.0"
 image = "0.25.6"
 rodio = "0.21.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.143"
