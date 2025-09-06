@@ -9,7 +9,7 @@ mod guard;
 mod download;
 mod cache;
 
-pub fn run_pipeline(args: Args) -> io::Result<()> {
+pub fn run_pipeline(args: &Args) -> io::Result<()> {
     if !guard::ensure_dependencies() {
         return err("Missing dependencies");
     }
@@ -24,11 +24,12 @@ pub fn run_pipeline(args: Args) -> io::Result<()> {
             return err("Video not found, please specify a url to download it");
         };
 
-        let height = cached_or_default(&cache, "height", constants::DEFAULT_HEIGHT);
-        let fps = cached_or_default(&cache, "fps", constants::DEFAULT_FPS);
+        let height = args.height.unwrap_or(cached_or_default(&cache, "height", constants::DEFAULT_HEIGHT));
+        let fps = args.fps.unwrap_or(cached_or_default(&cache, "fps", constants::DEFAULT_FPS));
 
         download::download_video(name, url, height, fps);
-        // TODO: set cache, take arguments from Args
+        cache.set("height", height.into())?;
+        cache.set("fps", fps.into())?;
     }
 
     if !Path::new(&format!("{entry_path}/{}.mp3", args.name)).exists() {

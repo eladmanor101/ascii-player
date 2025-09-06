@@ -1,13 +1,15 @@
 pub mod cli;
 pub mod pipeline;
+pub mod player;
 pub mod util;
 pub mod constants;
 
-use std::io;
+use std::{io::{self, Write}, thread, time::{Duration, Instant}};
 
 use clap::Parser;
+use crossterm::{ExecutableCommand, cursor, terminal};
 
-use crate::{cli::Args, pipeline::run_pipeline};
+use crate::{cli::Args, pipeline::run_pipeline, player::frames::Frames};
 
 /*
 TODO:
@@ -15,9 +17,32 @@ TODO:
 */
 
 fn main() -> io::Result<()> {
+    println!("Rust binary started with args: {:?}", std::env::args().collect::<Vec<_>>());
     let args = Args::parse();
 
-    run_pipeline(args)?;
+    run_pipeline(&args)?;
+
+    let mut frames = Frames::new(&format!("{}/{}/{}.mp4", constants::ASSETS_PATH, args.name, args.name), 30, -1, constants::DEFAULT_HEIGHT as i32)?;
+
+    let mut stdout = std::io::stdout();
+    stdout.execute(cursor::Hide)?;
+    stdout.execute(terminal::Clear(terminal::ClearType::All))?;
+
+    let start = Instant::now();
+    let mut frame_index = 0;
+    while let Some(frame) = frames.next_frame()? {
+        player::render::display_frame(frames.height(), frames.width(), &mut stdout, frame)?;
+
+        let next_frame = start + Duration::from_millis(frame_index as u64 * 1000 / 30.0 as u64);
+        let now = Instant::now();
+        if next_frame > now {
+            thread::sleep(next_frame - now);
+        }
+
+        frame_index += 1;
+    }
+
+    stdout.flush()?;
 
     Ok(())
 }
