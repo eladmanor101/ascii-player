@@ -5,6 +5,8 @@ use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::Path;
 
+use crate::error::MyError;
+
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Cache {
     data: HashMap<String, Value>,
@@ -13,7 +15,7 @@ pub struct Cache {
 
 impl Cache {
     /// Load cache from a JSON file, or create an empty cache if the file doesn't exist
-    pub fn new<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, MyError> {
         let path_str = path.as_ref().to_string_lossy().to_string();
         if path.as_ref().exists() {
             let content = fs::read_to_string(&path)?;
@@ -34,14 +36,15 @@ impl Cache {
     }
 
     /// Set a value for a key and save immediately
-    pub fn set(&mut self, key: &str, value: Value) -> io::Result<()> {
+    pub fn set(&mut self, key: &str, value: Value) -> Result<(), MyError> {
         self.data.insert(key.to_string(), value);
         self.save()
     }
 
     /// Save the cache to the JSON file
-    pub fn save(&self) -> io::Result<()> {
+    pub fn save(&self) -> Result<(), MyError> {
         let content = serde_json::to_string_pretty(&self.data)?;
+        fs::create_dir_all(Path::new(&self.path).parent().unwrap())?;
         let mut file = File::create(&self.path)?;
         file.write_all(content.as_bytes())?;
         Ok(())

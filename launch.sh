@@ -1,10 +1,13 @@
 set -e
 
-RUST_BIN="/home/elad/dev/rust-projects/ascii-player/target/release/ascii-player"
+PROJECT_PATH="/home/elad/dev/rust-projects/ascii-player"
+RUST_BIN="$PROJECT_PATH/target/release/ascii-player"
 VIDEO_LINK="https://www.youtube.com/watch?v=TC80uw4HgCw"
 NAME="teto"
-HEIGHT=80
-WIDTH=120
+HEIGHT=50
+WIDTH=89
+
+cargo build --release
 
 /mnt/c/Program\ Files/Alacritty/alacritty.exe \
     -o window.dimensions.columns=$WIDTH \
@@ -14,6 +17,5 @@ WIDTH=120
     -o window.padding.x=0 \
     -o window.padding.y=0 \
     -o window.decorations=none \
-    -e wsl bash -c 'exec "$0" "$@" ; echo "Press Enter to exit..."; read' "$RUST_BIN" --url "$VIDEO_LINK" --name "$NAME"
-#    -e wsl bash -c "$RUST_BIN --url \"$VIDEO_LINK\" --name \"$NAME\"; echo 'Press Enter to exit...'; read" dummy
-#    -e wsl "$RUST_BIN" "--url" "$VIDEO_LINK" "--name" "$NAME"
+    -e wsl "bash -l -c \"cd $PROJECT_PATH; $RUST_BIN --url $VIDEO_LINK --name $NAME\"; echo; echo Press enter to exit; read"
+    #-e wsl "$RUST_BIN" "--url" "$VIDEO_LINK" "--name" "$NAME"

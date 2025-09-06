@@ -1,45 +1,48 @@
 pub mod cli;
 pub mod pipeline;
 pub mod player;
-pub mod util;
-pub mod constants;
+pub mod common;
 
 use std::{io::{self, Write}, thread, time::{Duration, Instant}};
 
 use clap::Parser;
 use crossterm::{ExecutableCommand, cursor, terminal};
 
-use crate::{cli::Args, pipeline::run_pipeline, player::frames::Frames};
+use crate::{cli::Args, common::error::MyError, pipeline::run_pipeline, player::frames::Frames};
+pub use crate::common::{utils, constants, error};
 
 /*
 TODO:
 - Sanitize name argument
 */
 
-fn main() -> io::Result<()> {
+fn main() -> Result<(), MyError> {
     println!("Rust binary started with args: {:?}", std::env::args().collect::<Vec<_>>());
     let args = Args::parse();
 
     run_pipeline(&args)?;
 
-    let mut frames = Frames::new(&format!("{}/{}/{}.mp4", constants::ASSETS_PATH, args.name, args.name), 30, -1, constants::DEFAULT_HEIGHT as i32)?;
+    let path = format!("{}/{}", constants::ASSETS_PATH, args.name);
+    let video_path = format!("{}/{}.mp4", path, args.name);
+    let frames_path = format!("{}/frames", path);
+    let mut frames = Frames::from_video(&video_path, 30, -1, constants::DEFAULT_HEIGHT as i32, &frames_path)?;
+
+    let (width, height) = (frames.width(), frames.height());
 
     let mut stdout = std::io::stdout();
     stdout.execute(cursor::Hide)?;
     stdout.execute(terminal::Clear(terminal::ClearType::All))?;
+    stdout.execute(terminal::SetSize(width as u16, height as u16))?;
 
     let start = Instant::now();
-    let mut frame_index = 0;
-    while let Some(frame) = frames.next_frame()? {
-        player::render::display_frame(frames.height(), frames.width(), &mut stdout, frame)?;
+    for (frame_index, frame) in frames.enumerate() {
+        player::render::display_frame(height, width, &mut stdout, frame)?;
 
         let next_frame = start + Duration::from_millis(frame_index as u64 * 1000 / 30.0 as u64);
         let now = Instant::now();
         if next_frame > now {
             thread::sleep(next_frame - now);
         }
-
-        frame_index += 1;
     }
 
     stdout.flush()?;
